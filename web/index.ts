@@ -1,4 +1,3 @@
-// @ts-check
 import { join } from "path";
 import { readFileSync } from "fs";
 import express from "express";
@@ -7,6 +6,14 @@ import serveStatic from "serve-static";
 import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
+import { connectDatabase } from "./db/mongoose.js";
+import timerRoutes from "./routes/timer.routes.js";
+
+interface ProductCountQueryData {
+  productsCount: {
+    count: number;
+  };
+}
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -39,12 +46,14 @@ app.use("/api/*", shopify.validateAuthenticatedSession());
 
 app.use(express.json());
 
+app.use("/api/timers", timerRoutes);
+
 app.get("/api/products/count", async (_req, res) => {
   const client = new shopify.api.clients.Graphql({
     session: res.locals.shopify.session,
   });
 
-  const countData = await client.request(`
+  const countData = await client.request<ProductCountQueryData>(`
     query shopifyProductCount {
       productsCount {
         count
@@ -52,19 +61,20 @@ app.get("/api/products/count", async (_req, res) => {
     }
   `);
 
-  res.status(200).send({ count: countData.data.productsCount.count });
+  res.status(200).send({ count: countData.data!.productsCount.count });
 });
 
 app.post("/api/products", async (_req, res) => {
   let status = 200;
-  let error = null;
+  let error: string | null = null;
 
   try {
     await productCreator(res.locals.shopify.session);
-  } catch (e) {
-    console.log(`Failed to process products/create: ${e.message}`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : undefined;
+    console.log(`Failed to process products/create: ${message}`);
     status = 500;
-    error = e.message;
+    error = message ?? null;
   }
   res.status(status).send({ success: status === 200, error });
 });
@@ -83,4 +93,12 @@ app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
     );
 });
 
-app.listen(PORT);
+connectDatabase()
+  .then(() => {
+    app.listen(PORT);
+  })
+  .catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Server failed to start: ${message}`);
+    process.exit(1);
+  });

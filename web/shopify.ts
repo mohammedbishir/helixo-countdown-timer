@@ -1,4 +1,8 @@
-import { BillingInterval, LATEST_API_VERSION } from "@shopify/shopify-api";
+import {
+  BillingInterval,
+  LATEST_API_VERSION,
+  type BillingConfig,
+} from "@shopify/shopify-api";
 import { shopifyApp } from "@shopify/shopify-app-express";
 import { SQLiteSessionStorage } from "@shopify/shopify-app-session-storage-sqlite";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-10";
@@ -7,7 +11,7 @@ const DB_PATH = `${process.cwd()}/database.sqlite`;
 
 // The transactions with Shopify will always be marked as test transactions, unless NODE_ENV is production.
 // See the ensureBilling helper to learn more about billing in this template.
-const billingConfig = {
+const billingConfig: BillingConfig = {
   "My Shopify One-Time Charge": {
     // This is an example configuration that would do a one-time charge for $5 (only USD is currently supported)
     amount: 5.0,

@@ -1,4 +1,4 @@
-import { GraphqlQueryError } from "@shopify/shopify-api";
+import { GraphqlQueryError, type Session } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 
 const ADJECTIVES = [
@@ -81,9 +81,9 @@ const CREATE_PRODUCTS_MUTATION = `
 `;
 
 export default async function productCreator(
-  session,
-  count = DEFAULT_PRODUCTS_COUNT
-) {
+  session: Session,
+  count: number = DEFAULT_PRODUCTS_COUNT
+): Promise<void> {
   const client = new shopify.api.clients.Graphql({ session });
 
   try {
@@ -96,7 +96,7 @@ export default async function productCreator(
         },
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof GraphqlQueryError) {
       throw new Error(
         `${error.message}\n${JSON.stringify(error.response, null, 2)}`
@@ -107,7 +107,7 @@ export default async function productCreator(
   }
 }
 
-function randomTitle() {
+function randomTitle(): string {
   const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   return `${adjective} ${noun}`;

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"]
+  },
+  "include": ["*.ts", "*.js", "db/**/*.ts", "models/**/*.ts", "routes/**/*.ts", "express-locals.d.ts"],
+  "exclude": ["frontend", "node_modules", "dist"]
+}
