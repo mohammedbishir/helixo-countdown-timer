@@ -1,0 +1,15 @@
+<div class="helixo-countdown" data-helixo-countdown {{ block.shopify_attributes }}>
+  <p class="helixo-countdown__status">Countdown timer loading…</p>
+</div>
+
+{% schema %}
+{
+  "name": "Countdown Timer",
+  "target": "content",
+  "javascript": "countdown-timer.js",
+  "stylesheet": "countdown-timer.css",
+  "enabled_on": {
+    "templates": ["product"]
+  }
+}
+{% endschema %}

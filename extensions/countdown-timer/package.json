@@ -1,0 +1,17 @@
+{
+  "name": "countdown-timer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "preact": "^10.26.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.21.5",
+    "typescript": "~5.8.3"
+  }
+}

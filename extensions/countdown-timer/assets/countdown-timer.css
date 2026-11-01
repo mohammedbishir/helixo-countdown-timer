@@ -1,0 +1,11 @@
+.helixo-countdown {
+  display: block;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+}
+
+.helixo-countdown__status {
+  margin: 0;
+  min-height: 1.5rem;
+  line-height: 1.5rem;
+}
