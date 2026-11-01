@@ -11,6 +11,6 @@
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "include": ["*.ts", "*.js", "db/**/*.ts", "models/**/*.ts", "routes/**/*.ts", "express-locals.d.ts"],
+  "include": ["*.ts", "*.js", "db/**/*.ts", "models/**/*.ts", "routes/**/*.ts", "storefront/**/*.ts", "express-locals.d.ts"],
   "exclude": ["frontend", "node_modules", "dist"]
 }

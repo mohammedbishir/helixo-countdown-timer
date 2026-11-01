@@ -2,8 +2,24 @@ import { render } from "preact";
 
 const PLACEHOLDER = "Countdown timer loading…";
 
-function CountdownTimerPlaceholder() {
-  return <p className="helixo-countdown__status">{PLACEHOLDER}</p>;
+interface CountdownTimerPlaceholderProps {
+  productId: string;
+  proxyUrl: string;
+}
+
+function CountdownTimerPlaceholder({
+  productId,
+  proxyUrl,
+}: CountdownTimerPlaceholderProps) {
+  return (
+    <p
+      className="helixo-countdown__status"
+      data-product-id={productId}
+      data-proxy-url={proxyUrl}
+    >
+      {PLACEHOLDER}
+    </p>
+  );
 }
 
 function mountCountdownTimers(): void {
@@ -14,7 +30,13 @@ function mountCountdownTimers(): void {
       return;
     }
     mount.dataset.helixoReady = "true";
-    render(<CountdownTimerPlaceholder />, mount);
+    render(
+      <CountdownTimerPlaceholder
+        productId={mount.dataset.productId ?? ""}
+        proxyUrl={mount.dataset.proxyUrl ?? ""}
+      />,
+      mount
+    );
   });
 }
 

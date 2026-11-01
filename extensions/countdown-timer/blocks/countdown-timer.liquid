@@ -1,4 +1,10 @@
-<div class="helixo-countdown" data-helixo-countdown {{ block.shopify_attributes }}>
+<div
+  class="helixo-countdown"
+  data-helixo-countdown
+  data-product-id="{% if product %}gid://shopify/Product/{{ product.id }}{% endif %}"
+  data-proxy-url="/apps/helixo-countdown"
+  {{ block.shopify_attributes }}
+>
   <p class="helixo-countdown__status">Countdown timer loading…</p>
 </div>
 

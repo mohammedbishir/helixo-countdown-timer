@@ -12,6 +12,11 @@ scopes = "write_products"
 [auth]
 redirect_urls = [ "https://example.com/api/auth" ]
 
+[app_proxy]
+url = "/api/storefront/timers"
+prefix = "apps"
+subpath = "helixo-countdown"
+
 [webhooks]
 api_version = "2027-01"
 

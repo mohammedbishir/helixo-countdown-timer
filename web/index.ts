@@ -8,6 +8,7 @@ import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
 import { connectDatabase } from "./db/mongoose.js";
 import timerRoutes from "./routes/timer.routes.js";
+import storefrontTimerRoutes from "./routes/storefront-timer.routes.js";
 
 interface ProductCountQueryData {
   productsCount: {
@@ -38,6 +39,10 @@ app.post(
   shopify.config.webhooks.path,
   shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers })
 );
+
+// App Proxy requests are signed by Shopify and do not carry an admin session token.
+// This route must stay ahead of validateAuthenticatedSession.
+app.use("/api/storefront/timers", storefrontTimerRoutes);
 
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
