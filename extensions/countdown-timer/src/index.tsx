@@ -1,26 +1,5 @@
 import { render } from "preact";
-
-const PLACEHOLDER = "Countdown timer loading…";
-
-interface CountdownTimerPlaceholderProps {
-  productId: string;
-  proxyUrl: string;
-}
-
-function CountdownTimerPlaceholder({
-  productId,
-  proxyUrl,
-}: CountdownTimerPlaceholderProps) {
-  return (
-    <p
-      className="helixo-countdown__status"
-      data-product-id={productId}
-      data-proxy-url={proxyUrl}
-    >
-      {PLACEHOLDER}
-    </p>
-  );
-}
+import { CountdownTimerApp } from "./CountdownTimer";
 
 function mountCountdownTimers(): void {
   const mounts = document.querySelectorAll<HTMLElement>("[data-helixo-countdown]");
@@ -31,7 +10,7 @@ function mountCountdownTimers(): void {
     }
     mount.dataset.helixoReady = "true";
     render(
-      <CountdownTimerPlaceholder
+      <CountdownTimerApp
         productId={mount.dataset.productId ?? ""}
         proxyUrl={mount.dataset.proxyUrl ?? ""}
       />,

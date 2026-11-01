@@ -14,6 +14,7 @@ export interface StoredStorefrontTimer {
   startAt?: Date;
   endAt?: Date;
   durationSeconds?: number;
+  urgencyMessage?: string;
   targeting: {
     type: TargetingType;
     productIds: string[];
@@ -28,6 +29,7 @@ export interface StorefrontTimer {
   startAt?: string;
   endAt?: string;
   durationSeconds?: number;
+  urgencyMessage?: string;
   appearance: {
     backgroundColor: string;
     textColor: string;
@@ -147,12 +149,15 @@ function toStorefrontTimer(timer: StoredStorefrontTimer): StorefrontTimer {
     position: timer.appearance.position,
   };
 
+  const urgencyMessage = sanitizeUrgencyMessage(timer.urgencyMessage);
+
   if (timer.type === "EVERGREEN") {
     return {
       id: timer.id,
       type: timer.type,
       durationSeconds: timer.durationSeconds,
       appearance,
+      ...(urgencyMessage ? { urgencyMessage } : {}),
     };
   }
 
@@ -162,7 +167,16 @@ function toStorefrontTimer(timer: StoredStorefrontTimer): StorefrontTimer {
     startAt: timer.startAt?.toISOString(),
     endAt: timer.endAt?.toISOString(),
     appearance,
+    ...(urgencyMessage ? { urgencyMessage } : {}),
   };
+}
+
+function sanitizeUrgencyMessage(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const message = value.trim().slice(0, 280);
+  return message.length > 0 ? message : undefined;
 }
 
 function isValidDate(value: Date | undefined): value is Date {

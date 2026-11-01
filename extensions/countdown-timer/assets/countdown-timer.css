@@ -1,11 +1,64 @@
 .helixo-countdown {
   display: block;
   box-sizing: border-box;
-  min-height: 4.5rem;
+  min-height: 7rem;
 }
 
-.helixo-countdown__status {
+.helixo-countdown__status,
+.helixo-countdown__urgency {
   margin: 0;
   min-height: 1.5rem;
   line-height: 1.5rem;
+}
+
+.helixo-countdown__panel {
+  box-sizing: border-box;
+  min-height: 7rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.helixo-countdown__urgency {
+  margin-bottom: 0.5rem;
+}
+
+.helixo-countdown__units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.helixo-countdown__unit {
+  display: flex;
+  flex-direction: column;
+  min-width: 3.5rem;
+}
+
+.helixo-countdown__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.helixo-countdown__unit-label {
+  font-size: 0.75rem;
+  line-height: 1.2rem;
+}
+
+.helixo-countdown--small .helixo-countdown__value {
+  font-size: 1.125rem;
+}
+
+.helixo-countdown--medium .helixo-countdown__value {
+  font-size: 1.75rem;
+}
+
+.helixo-countdown--large .helixo-countdown__value {
+  font-size: 2.5rem;
+}
+
+.helixo-countdown--above-button,
+.helixo-countdown--below-price,
+.helixo-countdown--below-title {
+  width: 100%;
 }

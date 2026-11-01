@@ -128,6 +128,7 @@ function readTimer(timer: TimerDocument): StoredStorefrontTimer {
     startAt: timer.startAt,
     endAt: timer.endAt,
     durationSeconds: timer.durationSeconds,
+    urgencyMessage: timer.urgencyMessage,
     targeting: {
       type: timer.targeting.type,
       productIds: [...timer.targeting.productIds],
