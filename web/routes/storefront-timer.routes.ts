@@ -6,6 +6,13 @@ import { TimerModel, type TimerDocument } from "../models/timer.model.js";
 import { isAppProxyFailure, verifyAppProxyRequest } from "../storefront/app-proxy.js";
 import { loadProductCollectionIds } from "../storefront/collection-membership.js";
 import {
+  allowImpression,
+  incrementImpression,
+  isTimerObjectId,
+  timerBelongsToShop,
+  utcDateKey,
+} from "../storefront/impressions.js";
+import {
   hasCollectionCandidates,
   normalizeProductId,
   selectStorefrontTimers,
@@ -30,11 +37,69 @@ export function createStorefrontTimerRouter(
   router.get("/", (req, res) => {
     void handleStorefrontTimers(req, res, dependencies);
   });
+  router.post("/impressions", (req, res) => {
+    void handleStorefrontImpression(req, res, dependencies);
+  });
   router.use((_req, res) => {
     sendJson(res, 405, { error: "Method not allowed" }, "no-store");
   });
 
   return router;
+}
+
+export async function handleStorefrontImpression(
+  req: Request,
+  res: Response,
+  dependencies: StorefrontTimerDependencies
+): Promise<void> {
+  try {
+    const verified = await verifyAppProxyRequest(
+      dependencies.api.utils,
+      req.query,
+      normalizeProductId
+    );
+    if (isAppProxyFailure(verified)) {
+      sendJson(res, verified.status, { error: verified.error }, "no-store");
+      return;
+    }
+
+    const timerId = readSignedTimerId(req.query.timer_id);
+    if (!timerId) {
+      sendJson(res, 400, { error: "Timer ID is invalid" }, "no-store");
+      return;
+    }
+
+    const owned = await timerBelongsToShop(verified.shop, timerId);
+    if (!owned) {
+      sendJson(res, 404, { error: "Timer not found" }, "no-store");
+      return;
+    }
+
+    const now = dependencies.now();
+    const rateKey = `${verified.shop}:${timerId}:${clientAddress(req)}`;
+    if (!allowImpression(rateKey, now.getTime())) {
+      sendJson(res, 200, { recorded: false }, "no-store");
+      return;
+    }
+
+    await incrementImpression(verified.shop, timerId, utcDateKey(now));
+    sendJson(res, 200, { recorded: true }, "no-store");
+  } catch (error: unknown) {
+    console.error(`Storefront impression failed: ${safeErrorText(error)}`);
+    sendJson(res, 503, { error: "Impression could not be recorded" }, "no-store");
+  }
+}
+
+function readSignedTimerId(value: unknown): string | null {
+  if (typeof value !== "string" || !isTimerObjectId(value)) {
+    return null;
+  }
+  return value.toLowerCase();
+}
+
+function clientAddress(req: Request): string {
+  const address = req.ip?.trim();
+  return address && address.length > 0 ? address : "unknown";
 }
 
 export async function handleStorefrontTimers(
@@ -146,7 +211,7 @@ function readTimer(timer: TimerDocument): StoredStorefrontTimer {
 function sendJson(
   res: Response,
   status: number,
-  body: { timers?: unknown; error?: string },
+  body: { timers?: unknown; error?: string; recorded?: boolean },
   cache: "public" | "no-store"
 ): void {
   res.setHeader("Cache-Control", cache === "public" ? CACHE_CONTROL : "no-store");

@@ -6,9 +6,11 @@ import serveStatic from "serve-static";
 import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
+import { guardAdminSession } from "./admin-session.js";
 import { connectDatabase } from "./db/mongoose.js";
 import timerRoutes from "./routes/timer.routes.js";
 import storefrontTimerRoutes from "./routes/storefront-timer.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 interface ProductCountQueryData {
   productsCount: {
@@ -47,11 +49,13 @@ app.use("/api/storefront/timers", storefrontTimerRoutes);
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
-app.use("/api/*", shopify.validateAuthenticatedSession());
+const authenticateAdmin = shopify.validateAuthenticatedSession();
+app.use("/api/*", guardAdminSession(authenticateAdmin));
 
 app.use(express.json());
 
 app.use("/api/timers", timerRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.get("/api/products/count", async (_req, res) => {
   const client = new shopify.api.clients.Graphql({
@@ -100,7 +104,15 @@ app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
 
 connectDatabase()
   .then(() => {
-    app.listen(PORT);
+    const server = app.listen(PORT, "127.0.0.1");
+    server.on("error", (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error(`HTTP server failed to start: ${message}`);
+      process.exit(1);
+    });
+    server.on("listening", () => {
+      console.log(`HTTP server listening on 127.0.0.1:${PORT}`);
+    });
   })
   .catch((error: unknown) => {
     const message = error instanceof Error ? error.message : "Unknown error";

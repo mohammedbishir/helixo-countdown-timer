@@ -15,7 +15,7 @@
   "author": "91859",
   "private": true,
   "workspaces": [
-    "extensions/*",
+    "countdown-timer",
     "web",
     "web/frontend"
   ]

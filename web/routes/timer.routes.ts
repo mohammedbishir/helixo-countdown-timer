@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import mongoose from "mongoose";
+import { safeErrorMessage } from "../admin-session.js";
 import {
   TARGETING_TYPES,
   TIMER_POSITIONS,
@@ -676,6 +677,7 @@ async function run(res: Response, work: () => Promise<void>): Promise<void> {
       return;
     }
     if (error instanceof mongoose.Error.CastError) {
+      console.error("Timer validation failed (400): value could not be read");
       sendError(res, 400, "Invalid timer data");
       return;
     }
@@ -691,6 +693,9 @@ function sendError(
   details?: string[]
 ): void {
   if (details && details.length > 0) {
+    console.error(
+      `Timer validation failed (${status}): ${details.join("; ")}`
+    );
     res.status(status).json({ error, details });
     return;
   }
@@ -702,8 +707,7 @@ function sendNotFound(res: Response): void {
 }
 
 function logServerError(error: unknown): void {
-  const message = error instanceof Error ? error.message : "Unknown error";
-  console.error(`Timer API error: ${message}`);
+  console.error(`Timer API error: ${safeErrorMessage(error)}`);
 }
 
 export default router;

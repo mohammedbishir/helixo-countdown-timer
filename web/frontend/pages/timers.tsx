@@ -14,6 +14,7 @@ import {
 } from "@shopify/polaris";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { TimerForm } from "../components/timers/TimerForm";
+import { TimerAnalytics } from "../components/timers/TimerAnalytics";
 import {
   TimerApiError,
   createTimer,
@@ -177,6 +178,7 @@ export default function TimersPage() {
       }}
     >
       <Stack vertical spacing="loose">
+        <TimerAnalytics />
         {timersQuery.isLoading ? <LoadingState label="Loading timers" /> : null}
         {timersQuery.isError ? (
           <Banner

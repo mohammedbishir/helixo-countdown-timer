@@ -26,6 +26,10 @@ extensions/*/build
 
 # Node library SQLite database
 web/database.sqlite
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 
 # Ignore shopify files created during app dev
 .shopify/*

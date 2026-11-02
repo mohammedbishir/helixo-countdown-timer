@@ -1,242 +1,280 @@
-# Shopify App Template for Node
+# Helixo Countdown Timer
 
-This is a template for building a [Shopify app](https://shopify.dev/docs/apps/getting-started) using Node and React. It contains the basics for building a Shopify app.
+Helixo Countdown Timer is an embedded Shopify app for creating fixed-date and evergreen countdown timers, placing them on product pages, and reviewing storefront impressions.
 
-Rather than cloning this repo, you can use your preferred package manager and the Shopify CLI with [these steps](#installing-the-template).
+Merchants manage timers in the Shopify admin. The online store renders one Theme App Extension block. That block loads eligible timers through a signed Shopify App Proxy and records one impression when the timer becomes visible.
 
-## Benefits
+## Features
 
-Shopify apps are built on a variety of Shopify tools to create a great merchant experience. The [create an app](https://shopify.dev/docs/apps/getting-started/create) tutorial in our developer documentation will guide you through creating a Shopify app using this template.
+- Fixed timers with a start and end time.
+- Evergreen timers that keep a per-browser deadline for a configured duration.
+- Targeting for the whole catalog, selected products, or selected collections.
+- Shopify Resource Picker for product and collection selection.
+- Appearance controls for colors, size, position, and an optional urgency message.
+- Product-page Theme App Extension.
+- Signed App Proxy responses that include only the fields the storefront needs.
+- Impression totals, per-timer totals, and daily counts in the timer manager.
+- Shop-scoped admin APIs. A request without a session token receives HTTP 401.
 
-The Node app template comes with the following out-of-the-box functionality:
+## Tech stack
 
-- OAuth: Installing the app and granting permissions
-- GraphQL Admin API: Querying or mutating Shopify admin data
-- REST Admin API: Resource classes to interact with the API
-- Shopify-specific tooling:
-  - AppBridge
-  - Polaris
-  - Webhooks
+- Shopify CLI app, embedded in the Shopify admin.
+- Node.js, TypeScript, and Express.
+- React 18, Vite, React Router, React Query, Polaris, and App Bridge.
+- MongoDB and Mongoose for timer and impression documents.
+- SQLite for Shopify OAuth sessions.
+- Preact and esbuild for the storefront widget.
+- Shopify Admin GraphQL for collection membership on the storefront. Product and collection selection in the admin uses the Resource Picker.
 
-## Tech Stack
+## Architecture
 
-This template combines a number of third party open-source tools:
+```text
+Shopify admin
+  └─ embedded React app (/timers)
+       └─ authenticated /api/timers and /api/analytics
 
-- [Express](https://expressjs.com/) builds the backend.
-- [Vite](https://vitejs.dev/) builds the [React](https://reactjs.org/) frontend.
-- [React Router](https://reactrouter.com/) is used for routing. We wrap this with file-based routing.
-- [React Query](https://react-query.tanstack.com/) queries the Admin API.
-- [`i18next`](https://www.i18next.com/) and related libraries are used to internationalize the frontend.
-  - [`react-i18next`](https://react.i18next.com/) is used for React-specific i18n functionality.
-  - [`i18next-resources-to-backend`](https://github.com/i18next/i18next-resources-to-backend) is used to dynamically load app translations.
-  - [`@formatjs/intl-localematcher`](https://formatjs.io/docs/polyfills/intl-localematcher/) is used to match the user locale with supported app locales.
-  - [`@formatjs/intl-locale`](https://formatjs.io/docs/polyfills/intl-locale) is used as a polyfill for [`Intl.Locale`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale) if necessary.
-  - [`@formatjs/intl-pluralrules`](https://formatjs.io/docs/polyfills/intl-pluralrules) is used as a polyfill for [`Intl.PluralRules`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/PluralRules) if necessary.
-
-The following Shopify tools complement these third-party tools to ease app development:
-
-- [Shopify API library](https://github.com/Shopify/shopify-node-api) adds OAuth to the Express backend. This lets users install the app and grant scope permissions.
-- [App Bridge React](https://shopify.dev/docs/apps/tools/app-bridge/getting-started/using-react) adds [authentication to API requests](https://shopify.dev/docs/api/app-bridge-library/apis/resource-fetching) in the frontend and renders components outside of the App’s iFrame.
-- [Polaris React](https://polaris.shopify.com/) is a powerful design system and component library that helps developers build high quality, consistent experiences for Shopify merchants.
-- [File-based routing](https://github.com/Shopify/shopify-frontend-template-react/blob/main/Routes.jsx) makes creating new pages easier.
-- [`@shopify/i18next-shopify`](https://github.com/Shopify/i18next-shopify) is a plugin for [`i18next`](https://www.i18next.com/) that allows translation files to follow the same JSON schema used by Shopify [app extensions](https://shopify.dev/docs/apps/checkout/best-practices/localizing-ui-extensions#how-it-works) and [themes](https://shopify.dev/docs/themes/architecture/locales/storefront-locale-files#usage).
-
-## Getting started
-
-### Requirements
-
-1. You must [download and install Node.js](https://nodejs.org/en/download/) if you don't already have it.
-1. You must [create a Shopify partner account](https://partners.shopify.com/signup) if you don’t have one.
-1. You must create a store for testing if you don't have one, either a [development store](https://help.shopify.com/en/partners/dashboard/development-stores#create-a-development-store) or a [Shopify Plus sandbox store](https://help.shopify.com/en/partners/dashboard/managing-stores/plus-sandbox-store).
-
-### Installing the template
-
-This template can be installed using your preferred package manager:
-
-Using yarn:
-
-```shell
-yarn create @shopify/app --template=node
+Online store product page
+  └─ Theme App Extension block
+       └─ extensions/countdown-timer/assets/countdown-timer.js
+            ├─ GET  /apps/helixo-countdown
+            └─ POST /apps/helixo-countdown/impressions
+                 └─ App Proxy → /api/storefront/timers
+                      └─ MongoDB (helixo_countdown)
 ```
 
-Using npm:
+The widget source and its build script live in `countdown-timer/`, outside the theme extension. The build writes the production bundle to `extensions/countdown-timer/assets/countdown-timer.js`. The Liquid block references that filename.
+
+Shopify session records stay in `web/database.sqlite`. Countdown documents stay in MongoDB. The App Proxy route is mounted before admin session authentication because Shopify signs those requests instead of sending an admin session token.
+
+## Prerequisites
+
+- Node.js 18 or newer. The web workspace declares `>=16.13.0`; the Docker image uses Node 18.
+- npm workspaces.
+- Shopify CLI.
+- A Shopify Partner account and a development store.
+- MongoDB reachable with a connection string.
+
+## Local setup
+
+From the repository root:
 
 ```shell
-npm init @shopify/app@latest -- --template=node
+npm install
 ```
 
-Using pnpm:
+Create a gitignored `.env` in the repository root:
 
-```shell
-pnpm create @shopify/app@latest --template=node
+```text
+MONGODB_URI=mongodb://127.0.0.1:27017/helixo_countdown
 ```
 
-This will clone the template and install the required dependencies.
+The backend reads `MONGODB_URI` from the environment first. When the Shopify CLI starts the process with `web/` as the working directory and does not forward the variable, the backend also reads `.env` from `web/` and from the repository root.
 
-#### Local Development
-
-[The Shopify CLI](https://shopify.dev/docs/apps/tools/cli) connects to an app in your Partners dashboard. It provides environment variables, runs commands in parallel, and updates application URLs for easier development.
-
-You can develop locally using your preferred package manager. Run one of the following commands from the root of your app.
-
-Using yarn:
-
-```shell
-yarn dev
-```
-
-Using npm:
+Start the app:
 
 ```shell
 npm run dev
 ```
 
-Using pnpm:
+The CLI supplies `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SCOPES`, and `HOST`, updates the app URL, and opens the development preview.
 
-```shell
-pnpm run dev
+Install the app on the development store from that preview, then open **Countdown Timer Manager**.
+
+## Environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | MongoDB connection string. Required for timer and impression storage. |
+| `SHOPIFY_API_KEY` | App client ID. The CLI sets this during `npm run dev`. A production frontend build fails without it. |
+| `SHOPIFY_API_SECRET` | App secret used to verify OAuth and App Proxy signatures. The CLI sets this during development. |
+| `SCOPES` | Admin scopes. This app requests `write_products`. |
+| `HOST` | Public app URL assigned by the CLI. |
+| `BACKEND_PORT` | Port the CLI expects the Express server to bind. The server listens on `127.0.0.1`. |
+| `FRONTEND_PORT` | Vite port used by the CLI. |
+| `PORT` | Fallback listen port when `BACKEND_PORT` is unset. Defaults to `3000`. |
+| `NODE_ENV` | `development` or `production`. |
+
+Do not commit `.env`. `.env` and `.env.*` are listed in `.gitignore`.
+
+## Shopify development setup
+
+`shopify.app.toml` configures:
+
+- Embedded admin.
+- Scope `write_products`.
+- App Proxy prefix `apps`, subpath `helixo-countdown`, forwarding to `/api/storefront/timers`.
+- Webhook API version `2027-01`.
+
+On the development store:
+
+1. Run `npm run dev` and install the app.
+2. In **Countdown Timer Manager**, create a timer.
+3. Open the theme editor for a product template.
+4. Add the **Countdown Timer** app block.
+5. Save the theme and open a product that matches the timer.
+
+The block reserves its initial line of text so the page does not jump when the widget replaces the loading message.
+
+## Database setup
+
+Shopify OAuth sessions are stored in `web/database.sqlite`. The Shopify library creates that file on startup. It is listed in `.gitignore` and must stay uncommitted.
+
+Timer and impression documents use MongoDB. Use any MongoDB server the app can reach. The local database name used during development is `helixo_countdown`.
+
+Collections:
+
+- `timers` — merchant timer configuration, including the shop domain.
+- `timerimpressions` — one document per shop, timer, and UTC date.
+
+The impression collection has a unique index on `shop`, `timerId`, and `date`. Increments use an atomic upsert.
+
+## API documentation
+
+Admin routes require the Shopify session token that App Bridge attaches inside the embedded app. The shop is taken from that session. Clients cannot choose the shop in the body.
+
+Missing or invalid bearer tokens receive:
+
+```json
+{ "error": "Shop session is required" }
 ```
 
-Open the URL generated in your console. Once you grant permission to the app, you can start development.
+with HTTP 401. Responses do not include access tokens or exception text.
 
-## Deployment
+### Timers
 
-### Application Storage
+`GET /api/timers`
 
-This template uses [SQLite](https://www.sqlite.org/index.html) to store session data. The database is a file called `database.sqlite` which is automatically created in the root. This use of SQLite works in production if your app runs as a single instance.
+Optional query: `enabled=true|false`, `type=FIXED|EVERGREEN`.
 
-The database that works best for you depends on the data your app needs and how it is queried. You can run your database of choice on a server yourself or host it with a SaaS company. Here’s a short list of databases providers that provide a free tier to get started:
+`POST /api/timers`
 
-| Database   | Type             | Hosters                                                                                                                                                                                                                               |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MySQL      | SQL              | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-mysql), [Planet Scale](https://planetscale.com/), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql) |
-| PostgreSQL | SQL              | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-postgresql), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/postgres)                                   |
-| Redis      | Key-value        | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-redis), [Amazon MemoryDB](https://aws.amazon.com/memorydb/)                                                                                                        |
-| MongoDB    | NoSQL / Document | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-mongodb), [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                                                                  |
+`GET /api/timers/:id`
 
-To use one of these, you need to change your session storage configuration. To help, here’s a list of [SessionStorage adapter packages](https://github.com/Shopify/shopify-api-js/blob/main/packages/shopify-api/docs/guides/session-storage.md).
+`PATCH /api/timers/:id`
 
-### Build
+`DELETE /api/timers/:id`
 
-The frontend is a single page app. It requires the `SHOPIFY_API_KEY`, which you can find on the page for your app in your partners dashboard. Paste your app’s key in the command for the package manager of your choice:
+A timer body includes:
 
-Using yarn:
+| Field | Rules |
+| --- | --- |
+| `name` | Required on create. 1–120 characters. |
+| `type` | `FIXED` or `EVERGREEN`. |
+| `enabled` | Boolean. Defaults to `true`. |
+| `startAt`, `endAt` | Required for `FIXED`. `endAt` must be later than `startAt`. |
+| `durationSeconds` | Required positive integer for `EVERGREEN`. |
+| `targeting.type` | `ALL`, `PRODUCTS`, or `COLLECTIONS`. |
+| `targeting.productIds` | Required and non-empty when targeting products. |
+| `targeting.collectionIds` | Required and non-empty when targeting collections. |
+| `appearance.backgroundColor`, `appearance.textColor` | Hex colors. |
+| `appearance.timerSize` | `SMALL`, `MEDIUM`, or `LARGE`. |
+| `appearance.position` | `ABOVE_BUTTON`, `BELOW_PRICE`, or `BELOW_TITLE`. |
+| `urgencyMessage` | Optional, up to 280 characters. |
 
-```shell
-cd web/frontend/ && SHOPIFY_API_KEY=REPLACE_ME yarn build
+`shop` cannot be set by the client. List, read, update, and delete queries include the session shop. Unknown IDs for another shop return 404.
+
+### Impression analytics
+
+`GET /api/analytics/impressions`
+
+Optional `from` and `to` query values use `YYYY-MM-DD`. The default range is the last 30 UTC days, including today. An inverted or malformed range returns 400.
+
+```json
+{
+  "from": "2026-10-03",
+  "to": "2026-11-01",
+  "totalImpressions": 12,
+  "days": [{ "date": "2026-11-01", "impressions": 4 }],
+  "timers": [{ "timerId": "…", "name": "Launch", "impressions": 12 }]
+}
 ```
 
-Using npm:
+A deleted timer is labeled `Deleted timer`. Days with no impressions are omitted. Analytics errors stay inside the impressions card; the timer list still renders.
 
-```shell
-cd web/frontend/ && SHOPIFY_API_KEY=REPLACE_ME npm run build
+### Storefront App Proxy
+
+Shopify forwards these paths to the app:
+
+- `GET /apps/helixo-countdown` → `GET /api/storefront/timers`
+- `POST /apps/helixo-countdown/impressions` → `POST /api/storefront/timers/impressions`
+
+The shop and `product_id` must be in the signed query. Impression requests also include `timer_id` in that signed query. The handler does not accept shop ownership from a request body.
+
+`GET` returns:
+
+```json
+{
+  "timers": [
+    {
+      "id": "…",
+      "type": "FIXED",
+      "startAt": "2026-11-01T00:00:00.000Z",
+      "endAt": "2026-11-02T00:00:00.000Z",
+      "urgencyMessage": "Ends soon",
+      "appearance": {
+        "backgroundColor": "#111111",
+        "textColor": "#eeeeee",
+        "timerSize": "MEDIUM",
+        "position": "BELOW_PRICE"
+      }
+    }
+  ]
+}
 ```
 
-Using pnpm:
+An evergreen timer includes `durationSeconds` instead of `startAt` and `endAt`. The payload omits the shop, access token, targeting lists, and merchant-only fields.
 
-```shell
-cd web/frontend/ && SHOPIFY_API_KEY=REPLACE_ME pnpm run build
-```
+Only enabled timers that are eligible now are returned. A fixed timer must have started and must not yet have reached `endAt`. Collection targeting is checked with the shop’s offline Admin GraphQL session, and only when a collection timer is eligible.
 
-You do not need to build the backend.
+`POST /api/storefront/timers/impressions` checks the signature, checks that the timer belongs to the signed shop, and increments the UTC day’s count. The same shop, timer, and IP is accepted once per 60 seconds. A duplicate returns `{ "recorded": false }`. The first accepted call returns `{ "recorded": true }`.
 
-## Hosting
+## Theme extension installation
 
-When you're ready to set up your app in production, you can follow [our deployment documentation](https://shopify.dev/docs/apps/deployment/web) to host your app on a cloud provider like [Heroku](https://www.heroku.com/) or [Fly.io](https://fly.io/).
-
-When you reach the step for [setting up environment variables](https://shopify.dev/docs/apps/deployment/web#set-env-vars), you also need to set the variable `NODE_ENV=production`.
-
-## Known issues
-
-### Hot module replacement and Firefox
-
-When running the app with the CLI in development mode on Firefox, you might see your app constantly reloading when you access it.
-That happened in previous versions of the CLI, because of the way HMR websocket requests work.
-
-We fixed this issue with v3.4.0 of the CLI, so after updating it, you can make the following changes to your app's `web/frontend/vite.config.js` file:
-
-1. Change the definition `hmrConfig` object to be:
-
-   ```js
-   const host = process.env.HOST
-     ? process.env.HOST.replace(/https?:\/\//, "")
-     : "localhost";
-
-   let hmrConfig;
-   if (host === "localhost") {
-     hmrConfig = {
-       protocol: "ws",
-       host: "localhost",
-       port: 64999,
-       clientPort: 64999,
-     };
-   } else {
-     hmrConfig = {
-       protocol: "wss",
-       host: host,
-       port: process.env.FRONTEND_PORT,
-       clientPort: 443,
-     };
-   }
-   ```
-
-1. Change the `server.host` setting in the configs to `"localhost"`:
-
-   ```js
-   server: {
-     host: "localhost",
-     ...
-   ```
-
-### I can't get past the ngrok "Visit site" page
-
-When you’re previewing your app or extension, you might see an ngrok interstitial page with a warning:
+The extension directory contains only theme files:
 
 ```text
-You are about to visit <id>.ngrok.io: Visit Site
+extensions/countdown-timer/
+  assets/countdown-timer.js
+  assets/countdown-timer.css
+  blocks/countdown-timer.liquid
+  locales/en.default.json
+  shopify.extension.toml
 ```
 
-If you click the `Visit Site` button, but continue to see this page, then you should run dev using an alternate tunnel URL that you run using tunneling software.
-We've validated that [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/run-tunnel/trycloudflare/) works with this template.
-
-To do that, you can [install the `cloudflared` CLI tool](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/), and run:
+Rebuild the widget after changing `countdown-timer/src`:
 
 ```shell
-# Note that you can also use a different port
-cloudflared tunnel --url http://localhost:3000
+npm run build --workspace=countdown-timer
 ```
 
-Out of the logs produced by cloudflare you will notice a https URL where the domain ends with `trycloudflare.com`. This is your tunnel URL. You need to copy this URL as you will need it in the next step.
+That command overwrites `extensions/countdown-timer/assets/countdown-timer.js`. The Liquid schema keeps `"javascript": "countdown-timer.js"`.
+
+In the theme editor, add **Countdown Timer** to a product template. The block is limited to product templates.
+
+## Testing commands
+
+From the repository root:
 
 ```shell
-2022-11-11T19:57:55Z INF Requesting new quick Tunnel on trycloudflare.com...
-2022-11-11T19:57:58Z INF +--------------------------------------------------------------------------------------------+
-2022-11-11T19:57:58Z INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
-2022-11-11T19:57:58Z INF |  https://randomly-generated-hostname.trycloudflare.com                                     |
-2022-11-11T19:57:58Z INF +--------------------------------------------------------------------------------------------+
+npm run typecheck --workspace=web
+npm run typecheck --workspace=web/frontend
+npm run typecheck --workspace=countdown-timer
+npm test --workspace=shopify-app-template-node
+npm run build --workspace=web/frontend
+npm run build --workspace=countdown-timer
+npm run build
 ```
 
-Below you would replace `randomly-generated-hostname` with what you have copied from the terminal. In a different terminal window, navigate to your app's root and with the URL from above you would call:
+Set `SHOPIFY_API_KEY` before `npm run build --workspace=web/frontend` when the CLI has not exported it. `npm run build` runs `shopify app build`. The backend package is still named `shopify-app-template-node`, so the test command uses that workspace name. `--workspace=web` also selects the frontend workspace.
 
-```shell
-# Using yarn
-yarn dev --tunnel-url https://randomly-generated-hostname.trycloudflare.com:3000
-# or using npm
-npm run dev --tunnel-url https://randomly-generated-hostname.trycloudflare.com:3000
-# or using pnpm
-pnpm dev --tunnel-url https://randomly-generated-hostname.trycloudflare.com:3000
-```
+On PowerShell, chain commands with `;` rather than `&&`.
 
-## Developer resources
+## Known limitations and assumptions
 
-- [Introduction to Shopify apps](https://shopify.dev/docs/apps/getting-started)
-- [App authentication](https://shopify.dev/docs/apps/auth)
-- [Shopify CLI](https://shopify.dev/docs/apps/tools/cli)
-- [Shopify API Library documentation](https://github.com/Shopify/shopify-api-js#readme)
-- [Getting started with internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
-  - [i18next](https://www.i18next.com/)
-    - [Configuration options](https://www.i18next.com/overview/configuration-options)
-  - [react-i18next](https://react.i18next.com/)
-    - [`useTranslation` hook](https://react.i18next.com/latest/usetranslation-hook)
-    - [`Trans` component usage with components array](https://react.i18next.com/latest/trans-component#alternative-usage-components-array)
-  - [i18n-ally VS Code extension](https://marketplace.visualstudio.com/items?itemName=Lokalise.i18n-ally)
+- The storefront API returns a fixed timer only while `startAt <= now < endAt`. The widget can still show “This offer has ended.” after `endAt` passes during the same page view. A fixed timer that has not started is not sent to the storefront.
+- An evergreen deadline is stored in the browser’s `localStorage`. It is not tied to a Shopify customer account. A new browser starts its own countdown. After expiry, the same browser session stays expired; a later session can start again.
+- An impression is recorded once per browser session when at least half of the timer panel is visible. The server also ignores a repeat from the same shop, timer, and IP for 60 seconds. Loading, empty, and error states do not count.
+- Theme Check reports `AssetSizeAppBlockJavaScript` because the raw widget bundle is larger than its 10 KB source threshold. The minified gzip size is under 10 KB, and `shopify app build` still completes.
+- A request to the storefront timer URL with no App Proxy signature is rejected. The logged message is the signature failure, and the public response does not include a session token.
+- The Docker image builds the admin app from `web/`. It does not build the theme widget. Deploy the extension with the Shopify CLI, and provide `MONGODB_URI` to the container at runtime.
+- Restart `npm run dev` if Shopify reports that the development preview has ended. The CLI clears and rebuilds `.shopify/dev-bundle` on startup.

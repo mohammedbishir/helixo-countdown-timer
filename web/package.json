@@ -7,6 +7,7 @@
     "debug": "tsx --inspect-brk index.ts",
     "dev": "cross-env NODE_ENV=development nodemon --exec tsx index.ts --ignore ./frontend",
     "serve": "cross-env NODE_ENV=production tsx index.ts",
+    "test": "tsx --test admin-session.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",
